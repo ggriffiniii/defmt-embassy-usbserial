@@ -113,11 +113,9 @@
 //!
 //! It may take some time for you to start receiving messages, and they may come through in bursts.
 //! This is due to the implementation waiting until one of its internal buffers is full before
-//! writing to the USB serial port.
-//!
-//! This effect will be most pronounced if you choose larger `defmtusb` buffer size features, and
-//! if you have messages with few (or no) formatting parameters, as this greatly reduces the size
-//! of the data that needs to be transferred.
+//! writing to the USB serial port. This effect will be more pronounced if you choose a larger
+//! `defmtusb` buffer size feature, and if you have messages with few (or no) formatting
+//! parameters, as this greatly reduces the size of the data that needs to be transferred.
 //!
 //! It may be possible to make the implementation aware of defmt messages, so that they come
 //! through in a more stream-like manner. Suggestions and contributions on this would be greatly
@@ -273,7 +271,7 @@ impl UsbEncoder {
 
 /// The logger implementation.
 #[defmt::global_logger]
-pub struct USBLogger;
+struct USBLogger;
 
 unsafe impl defmt::Logger for USBLogger {
     fn acquire() {
