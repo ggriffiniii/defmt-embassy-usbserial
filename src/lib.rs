@@ -55,6 +55,9 @@
 //! straightforward example of constructing both the driver and the configuration in this task,
 //! ultimately the only requirement is that it awaits [`defmtusb::run`].
 //!
+//! Of course, `defmtusb::run` is just an async function whose returned future can
+//! be `join`ed, etc.
+//!
 //! ## Configuration
 //!
 //! For USB-CDC to be set up properly, you _must_ set the correct values in the configuration
