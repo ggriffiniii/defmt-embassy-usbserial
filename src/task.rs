@@ -1,12 +1,14 @@
 //! Main task that runs the USB transport layer.
 
+use embassy_time::{Duration, Timer};
 use embassy_usb::{
-    class::cdc_acm::{Sender, State},
-    driver::Driver,
-    Config,
+    class::cdc_acm::{CdcAcmClass, Sender, State},
+    driver::{Driver, EndpointError},
+    Builder, Config,
 };
-
 use static_cell::{ConstStaticCell, StaticCell};
+
+// TODO: Document the RAM usage of these buffers.
 
 /// Config descriptor buffer
 static CONFIG_DESCRIPTOR_BUF: ConstStaticCell<[u8; 256]> = ConstStaticCell::new([0u8; 256]);
@@ -23,15 +25,15 @@ static CONTROL_BUF: ConstStaticCell<[u8; 256]> = ConstStaticCell::new([0u8; 256]
 /// CDC ACM state.
 static STATE: StaticCell<State> = StaticCell::new();
 
-/// Builds the USB class and runs both the logger and USB.
-/// Requires the USB driver provided by the HAL and the maximum packet size
-/// allowed in the device.
-/// The user may provide an optional USB configuration to set the VID, PID and
-/// other information of the USB device. If none is provided a default
-/// configuration will be set.
+/// Run the USB driver and defmt logger tasks.
+///
+/// This function builds the USB device with the provided driver and configuration, and awaits both
+/// it and the function that writes out buffered defmt messages over USB.
+///
+/// Along with the usb driver implementation, users must pass the max packet size (up to 64 bytes),
+/// and a USB configuration that is properly set for USB-CDC. See [the library documentation][crate]
+/// for details about the requirements.
 pub async fn run<D: Driver<'static>>(driver: D, size: usize, config: Config<'static>) {
-    use embassy_usb::{class::cdc_acm::CdcAcmClass, Builder};
-
     // Create the state of the CDC ACM device.
     let state: &'static mut State<'static> = STATE.init(State::new());
 
@@ -58,12 +60,11 @@ pub async fn run<D: Driver<'static>>(driver: D, size: usize, config: Config<'sta
     embassy_futures::join::join(usb.run(), logger(sender)).await;
 }
 
-/// Runs the logger task.
+/// USB logger task that writes full buffers out over USB.
+///
+/// When USB is connected, this enables the defmtusb controller and continuously attempts to flush
+/// any full buffer out over USB via `sender`.
 pub async fn logger<'d, D: Driver<'d>>(mut sender: Sender<'d, D>) {
-    use embassy_time::{Duration, Timer};
-
-    use embassy_usb::driver::EndpointError;
-
     // Get a reference to the controller.
     let controller = &super::controller::CONTROLLER;
     // Only attempt to write what the sender will accept.
