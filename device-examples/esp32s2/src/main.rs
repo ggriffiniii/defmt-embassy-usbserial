@@ -32,7 +32,7 @@ async fn defmtusb_wrapper(usb0: USB0<'static>, dp: GPIO20<'static>, dm: GPIO19<'
         c.device_protocol = 0x01;
         c
     };
-    defmtusb::run(usb_driver, 64, config).await;
+    defmt_embassy_usbserial::run(usb_driver, 64, config).await;
 }
 
 #[esp_rtos::main]

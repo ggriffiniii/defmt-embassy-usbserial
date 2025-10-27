@@ -7,7 +7,7 @@ publish = false
 [dependencies]
 cortex-m-rt = "0.7.5"
 defmt = "1.0.1"
-defmtusb = { path = "../.." }
+defmt-embassy-usbserial = { path = "../.." }
 embassy-executor = { version = "0.9.1", features = [
     "arch-cortex-m",
     "executor-interrupt",

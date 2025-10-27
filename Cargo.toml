@@ -1,42 +1,25 @@
 [package]
-name = "defmtusb"
-description = "defmt logging over USB interface"
-
-version = "0.1.0"
+name = "defmt-embassy-usbserial"
+description = "Transmit defmt log messages over USB serial"
+version = "0.2.0"
 edition = "2021"
-
 readme = "README.md"
-repository = "https://github.com/micro-rust/defmtusb"
-
+repository = "https://github.com/robjwells/defmt-embassy-usbserial"
 license = "MIT OR MPL-2.0"
-
 publish = true
-
 categories = ["development-tools::debugging", "embedded", "no-std"]
 keywords = ["defmt", "embedded", "logging", "usb"]
 
-
 [dependencies]
-portable-atomic = { version = "1.11", features = ["default"] }
+critical-section = "1"
+defmt = "1"
+embassy-futures = "0.1"
+embassy-time = "0.5"
+embassy-usb = "0.5"
+portable-atomic = "1"
+static_cell = "2"
 
-[dependencies.critical-section]
-version = "*"
-
-[dependencies.defmt]
-version = "0.3.0"
-
-[dependencies.embassy-futures]
-version = "0.1.0"
-
-[dependencies.embassy-time]
-version = "0.4.0"
-
-[dependencies.embassy-usb]
-version = "0.5"
-
-[dependencies.static_cell]
-version = "2"
-
+# These are for compiling the embassy-rp example in the documentation.
 [dev-dependencies]
 cortex-m-rt = "0.7"
 embassy-executor = { version = "0.9", features = [
