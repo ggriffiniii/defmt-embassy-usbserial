@@ -29,8 +29,6 @@ pub(super) static CONTROLLER: Controller = Controller::new();
 
 /// Controller of the buffers of the logger.
 pub struct Controller {
-    /// The controller is enabled.
-    enabled: AtomicBool,
     /// The producer handle.
     ///
     /// The producer is initialized lazily on the first write.
@@ -48,23 +46,8 @@ impl Controller {
     /// Static initializer.
     pub const fn new() -> Self {
         Self {
-            enabled: AtomicBool::new(true),
             producer: UnsafeCell::new(None),
         }
-    }
-
-    /// Enables the controller.
-    #[inline]
-    pub(super) fn enable(&self) {
-        self.enabled.store(true, Ordering::Relaxed);
-    }
-
-    /// Disables the controller.
-    ///
-    /// A disabled controller silently ignores any defmt logging.
-    #[inline]
-    pub(super) fn disable(&self) {
-        self.enabled.store(false, Ordering::Relaxed);
     }
 
     /// Write defmt-encoded bytes to the ring buffer.
@@ -75,11 +58,6 @@ impl Controller {
     /// inside a critical section.
     #[inline]
     pub(super) unsafe fn write(&self, bytes: &[u8]) {
-        // Do nothing if not enabled.
-        if !self.enabled.load(Ordering::Relaxed) {
-            return;
-        }
-
         // SAFETY: We are in a critical section, so we have exclusive access to the producer.
         // We wrap the dereference in an unsafe block to satisfy the `unsafe_op_in_unsafe_fn` lint.
         let producer_opt = unsafe { &mut *self.producer.get() };
