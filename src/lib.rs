@@ -136,7 +136,6 @@
 
 #![no_std]
 
-mod buffer;
 mod controller;
 mod task;
 
@@ -240,7 +239,8 @@ impl UsbEncoder {
     ///
     /// Must be called after calling `acquire` and before calling `release`.
     unsafe fn flush(&self) {
-        unsafe { controller::CONTROLLER.swap() }
+        // Ideally this would block until everything has been written to the USB serial port.
+        // However, this is not possible in a synchronous context, so we do nothing.
     }
 
     /// Write bytes to the defmt encoder.
