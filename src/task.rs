@@ -1,5 +1,6 @@
 //! Main task that runs the USB transport layer.
 
+use embassy_time::{Duration, Timer};
 use embassy_usb::{
     Builder, Config,
     class::cdc_acm::{CdcAcmClass, ControlChanged, Sender, State},
@@ -71,16 +72,17 @@ pub async fn logger<'d, D: Driver<'d>>(mut sender: Sender<'d, D>, ctrl: ControlC
 
         // If we don't wait for both DTR and RTS before sending data, we may send data before the
         // host is ready to receive it, which will cause the host to drop the data.
-        while !(sender.dtr() && sender.rts()) {
-            ctrl.control_changed().await;
-        }
-
         // Continually attempt to write buffered defmt bytes out over USB.
         loop {
+            while !(sender.dtr() && sender.rts()) {
+                ctrl.control_changed().await;
+                Timer::after(Duration::from_millis(10)).await;
+            }
+
             // Wait for data to be available.
             let readable = consumer.readable_bytes().await;
             use embedded_io_async::Write;
-            match sender.write_all(&readable).await {
+            match sender.write(&readable).await {
                 Err(EndpointError::Disabled) => {
                     // USB endpoint is now disabled. Wait for reconnection and
                     // hope we're using rzcobs encoding.
@@ -89,9 +91,9 @@ pub async fn logger<'d, D: Driver<'d>>(mut sender: Sender<'d, D>, ctrl: ControlC
                 Err(EndpointError::BufferOverflow) => {
                     unreachable!("Sent chunks are limited to Sender max packet size.")
                 }
-                Ok(()) => {
+                Ok(bytes_written) => {
                     // Mark the bytes as consumed.
-                    readable.consume_all();
+                    readable.consume(bytes_written);
                 }
             }
         }
